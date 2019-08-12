@@ -12,6 +12,12 @@ To keep a physical interface as simple as possible, this sketch demonstrates gen
 Initial setting:
 
 Click:
+1) Preset Down
+2) Preset Up
+3) Snapshot Up  
+4) Tap Tempo
+
+Click:
 1)Stomp 1 on/off
 2)Stomp 2 on/off
 3)Stomp 3 on/off
@@ -24,9 +30,9 @@ Double click:
 4) Next Snapshot
 
 Press and hold:
-1) Stomp Mode
+1) Preset Mode
 2) Scroll Mode
-3) Preset Mode
+3) Stomp Mode
 4) Tuner On
 
 Long press and hold:
@@ -41,10 +47,10 @@ Long press and hold:
 #include <MIDI.h>
 MIDI_CREATE_DEFAULT_INSTANCE();
 
-#define ledPin1 17 // digital output pin for LED 1
-#define ledPin2 16 // digital output pin for LED 2
-#define ledPin3 15 // digital output pin for LED 3
-#define ledPin4 14 // digital output pin for LED 4
+#define ledPin1 6 // digital output pin for LED 1
+#define ledPin2 7 // digital output pin for LED 2
+#define ledPin3 8 // digital output pin for LED 3
+#define ledPin4 9 // digital output pin for LED 4
 
 // LED variables
 boolean ledVal1 = false; // state of LED 1
@@ -54,10 +60,10 @@ boolean ledVal4 = false; // state of LED 4
 
 // Button definitions
 int buttonPin = 0;
-int buttonPin1 = 4;
-int buttonPin2 = 5;
-int buttonPin3 = 6;
-int buttonPin4 = 7;
+int buttonPin1 = 2;
+int buttonPin2 = 3;
+int buttonPin3 = 4;
+int buttonPin4 = 5;
 
 // Button timing variables
 int debounce = 20; // ms debounce period to prevent flickering when pressing or releasing the button
@@ -107,9 +113,23 @@ int cc_fs8 = 55;
 int cc_fs9 = 56;
 int cc_fs10 = 57;
 int cc_fs11 = 58;
+int cc_taptempo = 64;  // 64-127
 int cc_tuner = 68;
 int cc_snapshot = 69;  // Snapshot-keuze (0= Snapshot 1, 1= Snapshot 2, 2= Snapshot 3, 8= next, 9= previous
 int cc_stompmode = 71; // Voetschakelaarmode (0= Stomp, 1= Scroll, 2= Preset, 3= Snapshot, 4= next, 5= previous)
+
+int MODE = 1;          // 1=preset 2=snapshot 3=stomp
+int TEMPO = 64;
+int TEMPCOUNTER = 0;
+int TEMPSTART = 0;
+unsigned long StartTime;
+unsigned long CurrentTime;
+unsigned long ElapsedTime;
+
+int TUNERON = 0;
+int CHAN = 1;
+int PC = 0;
+int SNAP = 0;
 
 
 
@@ -182,6 +202,49 @@ void clickEvent(int pin) {
 // What happens: Program change 
   ledVal1 = !ledVal1;
   digitalWrite(ledPin1, ledVal1);
+  switch (MODE) {
+// preset mode
+    case 1:
+    switch (pin) {
+    case 1: 
+      PC = --PC;
+      if (PC < 0) {
+          PC = 24;
+      }
+      SendPC(CHAN, PC);
+      break;
+    case 2: 
+      PC = ++PC;
+      if (PC > 24) {
+          PC = 0;
+      }
+      SendPC(CHAN, PC);
+      break;
+      
+    case 3: 
+      SendCC(CHAN, cc_snapshot, SNAP);
+      SNAP = ++SNAP;
+      if (SNAP > 4) {
+          SNAP = 0;
+      }
+      break;
+      
+    case 4:
+      if (TEMPSTART == 0) {
+        StartTime = millis();
+        TEMPSTART = 1;
+      }
+      if (TEMPSTART == 1) {
+        CurrentTime = millis();
+        ElapsedTime = CurrentTime - StartTime;
+        SendCC(CHAN, cc_taptempo, ElapsedTime);
+        TEMPSTART = 0;
+      }
+      break;
+      
+    }
+    break;
+  }
 }
 
 void doubleClickEvent(int pin) {
