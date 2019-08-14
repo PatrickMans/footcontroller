@@ -51,6 +51,9 @@ MIDI_CREATE_DEFAULT_INSTANCE();
 #define ledPin2 7 // digital output pin for LED 2
 #define ledPin3 8 // digital output pin for LED 3
 #define ledPin4 9 // digital output pin for LED 4
+#define modePin1 10 // digital output pin for mode 1
+#define modePin2 11 // digital output pin for mode 2
+#define modePin3 12 // digital output pin for mode 3
 
 // LED variables
 boolean ledVal1 = false; // state of LED 1
@@ -67,8 +70,8 @@ int buttonPin4 = 5;
 
 // Button timing variables
 int debounce = 20; // ms debounce period to prevent flickering when pressing or releasing the button
-int DCgap = 250; // max ms between clicks for a double click event
-int holdTime = 2000; // ms hold period: how long to wait for press+hold event
+int DCgap = 50; // max ms between clicks for a double click event
+int holdTime = 1000; // ms hold period: how long to wait for press+hold event
 int longHoldTime = 5000; // ms long hold period: how long to wait for press+hold event
 
 // Other button variables
@@ -126,10 +129,14 @@ unsigned long StartTime;
 unsigned long CurrentTime;
 unsigned long ElapsedTime;
 
-int TUNERON = 0;
+int ShowTunerPage = 0;
 int CHAN = 1;
 int PC = 0;
 int SNAP = 0;
+int fs7 = 0;
+int fs8 = 0;
+int fs9 = 0;
+int fs10 = 0;
 
 
 
@@ -204,9 +211,9 @@ void clickEvent(int pin) {
   digitalWrite(ledPin1, ledVal1);
   switch (MODE) {
 // preset mode
-    case 1:
+    case 1:  //Preset select
     switch (pin) {
-    case 1: 
+     case 1: 
       PC = --PC;
       if (PC < 0) {
           PC = 24;
@@ -220,7 +227,6 @@ void clickEvent(int pin) {
       }
       SendPC(CHAN, PC);
       break;
-      
     case 3: 
       SendCC(CHAN, cc_snapshot, SNAP);
       SNAP = ++SNAP;
@@ -228,20 +234,68 @@ void clickEvent(int pin) {
           SNAP = 0;
       }
       break;
-      
     case 4:
-      if (TEMPSTART == 0) {
-        StartTime = millis();
-        TEMPSTART = 1;
-      }
-      if (TEMPSTART == 1) {
-        CurrentTime = millis();
-        ElapsedTime = CurrentTime - StartTime;
-        SendCC(CHAN, cc_taptempo, ElapsedTime);
-        TEMPSTART = 0;
-      }
+      SendCC(CHAN, cc_taptempo, 100);
       break;
-      
+  
+    }
+    break;
+    
+   case 2: //select snapshots
+    switch (pin) {
+     case 1: 
+       SendCC(CHAN, cc_snapshot, 0);
+       break;
+    case 2: 
+       SendCC(CHAN, cc_snapshot, 1);
+       break;
+    case 3: 
+       SendCC(CHAN, cc_snapshot, 2);
+       break;
+    case 4:
+       SendCC(CHAN, cc_snapshot, 3);
+       break;      
+    }
+    break;    
+    
+   case 3: 
+    switch (pin) {
+     case 1: 
+       if (fs7 == 0) {
+           SendCC(CHAN, cc_fs7, 127);
+           fs7 = 1;
+       } else {
+           SendCC(CHAN, cc_fs7, 0);
+           fs7 = 0;                  
+       }
+       break;
+    case 2: 
+       if (fs8 == 0) {
+           SendCC(CHAN, cc_fs8, 127);
+           fs8 = 1;
+       } else {
+           SendCC(CHAN, cc_fs8, 0);
+           fs8 = 0;                  
+       }
+       break;
+    case 3: 
+       if (fs9 == 0) {
+           SendCC(CHAN, cc_fs9, 127);
+           fs9 = 1;
+       } else {
+           SendCC(CHAN, cc_fs9, 0);
+           fs9 = 0;                  
+       }
+       break;
+    case 4:
+       if (fs10 == 0) {
+           SendCC(CHAN, cc_fs10, 127);
+           fs10 = 1;
+       } else {
+           SendCC(CHAN, cc_fs10, 0);
+           fs10 = 0;                  
+       }
+       break;      
     }
     break;
   }
@@ -256,7 +310,36 @@ void doubleClickEvent(int pin) {
 void holdEvent(int pin) {
 // What happens: Switch snapshot
   ledVal3 = !ledVal3;
-  digitalWrite(ledPin3, ledVal3);
+  digitalWrite(ledPin3, ledVal3);  
+    switch (pin) {
+     case 1:  // mode 1 
+          digitalWrite(modePin1, 1);
+          digitalWrite(modePin2, 0);
+          digitalWrite(modePin3, 0);
+          MODE = 1;          
+      break;
+    case 2: 
+          digitalWrite(modePin1, 0);
+          digitalWrite(modePin2, 1);
+          digitalWrite(modePin3, 0);          
+          MODE = 2;          
+      break;
+    case 3:
+          digitalWrite(modePin1, 0);
+          digitalWrite(modePin2, 0);
+          digitalWrite(modePin3, 1);          
+          MODE = 3;          
+      break;
+    case 4:
+      if (ShowTunerPage == 1) {
+         SendCC(CHAN, cc_tuner, 0);
+         ShowTunerPage = 127;
+      } else {
+         SendCC(CHAN, cc_tuner, 127);
+         ShowTunerPage = 0;
+      }
+      break;  
+    }
 }
 
 void longHoldEvent(int pin) {
@@ -312,6 +395,12 @@ void setup()
   digitalWrite(ledPin3, ledVal3);
   pinMode(ledPin4, OUTPUT); 
   digitalWrite(ledPin4, ledVal4);
+  pinMode(modePin1, OUTPUT);
+  pinMode(modePin2, OUTPUT);
+  pinMode(modePin3, OUTPUT);
+  digitalWrite(modePin1, 1);
+  digitalWrite(modePin2, 0);
+  digitalWrite(modePin3, 0);    
 // midi config
   MIDI.begin(MIDI_CHANNEL_OMNI);
 }
@@ -319,7 +408,7 @@ void setup()
 void loop()
 {
 // Get button event and act accordingly
-  for (int i = 0; i <= 4; i++) {
+  for (int i = 1; i <= 5; i++) {
      int b = checkButton(i);
      if (b == 1) clickEvent(i);
      if (b == 2) doubleClickEvent(i);
