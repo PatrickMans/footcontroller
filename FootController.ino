@@ -389,11 +389,11 @@ void clickEvent(int stomp) {
     switch (stomp) {
      case 2: 
       digitalWrite(ledPin1, 0);
-      PC = PC--;
+      PC = --PC;
       if (PC < 0) {
           PC = 24;
       }
-      SendCC(CHAN, 32, 3);
+//      SendCC(CHAN, 32, 3);
       SendPC(CHAN, PC);
       digitalWrite(ledPin1, 1);
       break;
@@ -404,7 +404,7 @@ void clickEvent(int stomp) {
       if (PC > 24) {
           PC = 0;
       }
-      SendCC(CHAN, 32, 3);
+//      SendCC(CHAN, 32, 3);
       SendPC(CHAN, PC);
       digitalWrite(ledPin2, 1);
       break;
@@ -615,6 +615,7 @@ void setup()
   digitalWrite(modePin3, 1);    
 // midi config
   MIDI.begin(MIDI_CHANNEL_OMNI);
+  SendPC(CHAN, 0);
 }
 
 void loop()
