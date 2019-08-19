@@ -401,7 +401,7 @@ void clickEvent(int stomp) {
     case 3: 
       digitalWrite(ledPin2, 0);
       PC = ++PC;
-      if (PC > 24) {
+      if (PC > 23) {
           PC = 0;
       }
 //      SendCC(CHAN, 32, 3);
@@ -413,7 +413,7 @@ void clickEvent(int stomp) {
       digitalWrite(ledPin3, 0);
       SendCC(CHAN, cc_snapshot, SNAP);
       SNAP = ++SNAP;
-      if (SNAP > 4) {
+      if (SNAP > 3) {
           SNAP = 0;
       }
       digitalWrite(ledPin3, 1);
@@ -508,8 +508,8 @@ void holdEvent(int pin) {
           digitalWrite(ledPin2, 1);
           digitalWrite(ledPin3, 1);
           digitalWrite(ledPin4, 1);
-          fs4 = 0;                  
-          fs5 = 0;                  
+//          fs4 = 0;                  
+//          fs5 = 0;                  
           ShowTunerPage = 0;  
           MODE = 1;          
       break;
@@ -522,8 +522,8 @@ void holdEvent(int pin) {
           digitalWrite(ledPin2, 1);
           digitalWrite(ledPin3, 1);
           digitalWrite(ledPin4, 1);
-          fs4 = 0;                  
-          fs5 = 0;                  
+//          fs4 = 0;                  
+//          fs5 = 0;                  
           ShowTunerPage = 0;         
           MODE = 2;          
       break;
@@ -536,9 +536,14 @@ void holdEvent(int pin) {
           digitalWrite(ledPin2, 1);
           digitalWrite(ledPin3, 1);
           digitalWrite(ledPin4, 1);
-          fs4 = 0;                  
-          fs5 = 0;                  
-          ShowTunerPage = 0;           
+//          fs4 = 0;                  
+//          fs5 = 0;                  
+          ShowTunerPage = 0;
+          if (fs5 == 0) {
+           digitalWrite(ledPin2, 0);
+          } else {
+           digitalWrite(ledPin2, 1);
+          }           
           MODE = 3;          
       break;
     
